@@ -70,17 +70,12 @@ const getTransactions = asyncHandler(async (req, res) => {
   // 2. Build Query Object
   const query = { user: req.user.id };
 
-  // Filter by Type
-  if (type) {
-    query.type = type;
-  }
-
-  // Filter by Category (exact match)
+  // Apply filters
+  if (type) query.type = type;
   if (category) {
-    query.category = category;
+    // Case-insensitive category search
+    query.category = { $regex: new RegExp(`^${category}$`, "i") };
   }
-
-  // Filter by Date Range
   if (startDate || endDate) {
     query.date = {};
     if (startDate) query.date.$gte = new Date(startDate);

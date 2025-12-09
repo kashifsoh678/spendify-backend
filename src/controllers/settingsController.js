@@ -60,54 +60,65 @@ const changePassword = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, {}, "Password changed successfully"));
 });
 
-// Predefined Avatar Collection
-const APP_AVATARS = [
-  "https://api.dicebear.com/7.x/avataaars/svg?seed=Felix",
-  "https://api.dicebear.com/7.x/avataaars/svg?seed=Aneka",
-  "https://api.dicebear.com/7.x/avataaars/svg?seed=Zoe",
-  "https://api.dicebear.com/7.x/avataaars/svg?seed=Jack",
-  "https://api.dicebear.com/7.x/avataaars/svg?seed=Midnight",
-  "https://api.dicebear.com/7.x/bottts/svg?seed=Spendify",
-];
+// --- AVATAR MANAGEMENT ---
 
-// @desc    Get Available App Avatars
-// @route   GET /api/users/avatars
-const getAvailableAvatars = asyncHandler(async (req, res) => {
-  res
-    .status(200)
-    .json(
-      new ApiResponse(
-        200,
-        { avatars: APP_AVATARS },
-        "Available avatars retrieved"
-      )
-    );
-});
-
-// @desc    Upload Avatar (Update URL)
-// @route   POST /api/users/avatar
-// @desc    Upload Avatar (File or URL)
+// @desc    Upload Avatar (File Upload Only)
 // @route   POST /api/users/avatar
 const uploadAvatar = asyncHandler(async (req, res) => {
-  let avatarPath;
+  const imagekit = require("../config/imagekit");
+  let avatarUrl;
 
-  if (req.file) {
-    // Handle File Upload
-    avatarPath = `/uploads/${req.file.filename}`;
-  } else if (req.body.avatarUrl) {
-    // Handle URL string
-    avatarPath = req.body.avatarUrl;
-  } else {
-    throw new ApiError(400, "Please upload a file or provide an avatarUrl");
+  if (!req.file) {
+    throw new ApiError(400, "Please upload an image file");
   }
 
+  // Get current user to check for existing avatar
   const user = await User.findById(req.user.id);
-  user.avatar = avatarPath;
+
+  // Delete old avatar from ImageKit if it exists
+  if (user.avatar && user.avatar.includes("ik.imagekit.io")) {
+    try {
+      // Extract fileId from ImageKit URL
+      // URL format: https://ik.imagekit.io/alt5i0gkh/avatars/avatar_123_1733764800000.jpg
+      // We need to get the file path: /avatars/avatar_123_1733764800000.jpg
+      const urlObj = new URL(user.avatar);
+      const filePath = urlObj.pathname; // Gets /avatars/avatar_123_1733764800000.jpg
+
+      // List files to get fileId
+      const files = await imagekit.listFiles({
+        searchQuery: `name="${filePath.split("/").pop()}"`,
+      });
+
+      if (files.length > 0) {
+        console.log(`Deleting old avatar: ${files[0].fileId}`);
+        await imagekit.deleteFile(files[0].fileId);
+        console.log("Old avatar deleted successfully");
+      } else {
+        console.log("Old avatar file not found in ImageKit");
+      }
+    } catch (error) {
+      console.error("Error deleting old avatar:", error.message);
+      // Continue with upload even if deletion fails
+    }
+  }
+
+  // Upload new file to ImageKit
+  const uploadResponse = await imagekit.upload({
+    file: req.file.buffer.toString("base64"),
+    fileName: `avatar_${req.user.id}_${Date.now()}.${
+      req.file.mimetype.split("/")[1]
+    }`,
+    folder: "/avatars",
+    useUniqueFileName: true,
+  });
+
+  avatarUrl = uploadResponse.url;
+  user.avatar = avatarUrl;
   await user.save();
 
   res
     .status(200)
-    .json(new ApiResponse(200, { avatar: avatarPath }, "Avatar updated"));
+    .json(new ApiResponse(200, { avatar: avatarUrl }, "Avatar updated"));
 });
 
 // --- NOTIFICATION SETTINGS ---
@@ -289,5 +300,4 @@ module.exports = {
   getCategories,
   addCategory,
   deleteCategory,
-  getAvailableAvatars,
 };

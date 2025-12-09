@@ -1,38 +1,24 @@
 const multer = require("multer");
-const path = require("path");
+const { ApiError } = require("../utils/ApiError");
 
-// Set storage engine
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, "uploads/"); // Make sure this folder exists
-  },
-  filename: function (req, file, cb) {
-    cb(
-      null,
-      `avatar-${req.user.id}-${Date.now()}${path.extname(file.originalname)}`
-    );
-  },
-});
+// Use memory storage for ImageKit upload
+const storage = multer.memoryStorage();
 
-// Check file type
-function checkFileType(file, cb) {
-  const filetypes = /jpeg|jpg|png|gif/;
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = filetypes.test(file.mimetype);
-
-  if (mimetype && extname) {
-    return cb(null, true);
+// File filter for images only
+const fileFilter = (req, file, cb) => {
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
   } else {
-    cb("Error: Images Only!");
+    cb(new ApiError(400, "Only image files are allowed"), false);
   }
-}
+};
 
-// Init upload
+// Configure multer
 const upload = multer({
-  storage: storage,
-  limits: { fileSize: 1000000 }, // 1MB limit
-  fileFilter: function (req, file, cb) {
-    checkFileType(file, cb);
+  storage,
+  fileFilter,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
   },
 });
 

@@ -14,6 +14,7 @@ const aiRoutes = require("./src/routes/aiRoutes");
 const reportRoutes = require("./src/routes/reportRoutes");
 const alertRoutes = require("./src/routes/alertRoutes");
 const settingsRoutes = require("./src/routes/settingsRoutes");
+const dashboardRoutes = require("./src/routes/dashboardRoutes");
 
 dotenv.config();
 
@@ -51,6 +52,7 @@ app.use("/api/ai", aiRoutes);
 app.use("/api/reports", reportRoutes);
 app.use("/api/alerts", alertRoutes);
 app.use("/api", settingsRoutes);
+app.use("/api/dashboard", dashboardRoutes);
 
 // Error Handling Middleware
 const { errorHandler } = require("./src/middleware/errorMiddleware");

@@ -262,35 +262,28 @@ const exportReportPDF = asyncHandler(async (req, res) => {
 
   // === CATEGORY BREAKDOWN ===
   if (categoryBreakdown.length > 0) {
-    doc
-      .fillColor("#111827")
-      .fontSize(14)
-      .font("Helvetica-Bold")
-      .text("Category Breakdown");
+    doc.fillColor("#111827").fontSize(14).font("Helvetica-Bold");
+    doc.text("Category Breakdown", 50, doc.y);
     doc.moveDown(0.8);
 
     categoryBreakdown.forEach((cat) => {
       const percentage =
         totalExpenses > 0 ? Math.round((cat.amount / totalExpenses) * 100) : 0;
-      doc
-        .fillColor(grayColor)
-        .fontSize(10)
-        .font("Helvetica")
-        .text(
-          `${cat.category}: $${cat.amount.toLocaleString()} (${percentage}%)`,
-          { indent: 10 }
-        );
+      doc.fillColor(grayColor).fontSize(10).font("Helvetica");
+      doc.text(
+        `  ${cat.category}: $${cat.amount.toLocaleString()} (${percentage}%)`,
+        50,
+        doc.y
+      );
+      doc.moveDown(0.5);
     });
 
-    doc.moveDown(2);
+    doc.moveDown(1.5);
   }
 
   // === TRANSACTIONS TABLE ===
-  doc
-    .fillColor("#111827")
-    .fontSize(14)
-    .font("Helvetica-Bold")
-    .text("Transaction History");
+  doc.fillColor("#111827").fontSize(14).font("Helvetica-Bold");
+  doc.text("Transaction History", 50, doc.y);
   doc.moveDown(1);
 
   if (transactions.length === 0) {

@@ -46,6 +46,9 @@ const registerUser = asyncHandler(async (req, res) => {
           _id: user.id,
           name: user.name,
           email: user.email,
+          avatar: user.avatar,
+          settings: user.settings,
+          categories: user.categories,
           token: generateToken(user._id),
         },
         "User registered successfully"
@@ -77,6 +80,9 @@ const loginUser = asyncHandler(async (req, res) => {
           _id: user.id,
           name: user.name,
           email: user.email,
+          avatar: user.avatar,
+          settings: user.settings,
+          categories: user.categories,
           token: generateToken(user._id),
         },
         "User logged in successfully"
@@ -95,6 +101,7 @@ const getMe = asyncHandler(async (req, res) => {
     _id: req.user.id,
     name: req.user.name,
     email: req.user.email,
+    avatar: req.user.avatar,
     settings: req.user.settings,
     categories: req.user.categories,
   };
